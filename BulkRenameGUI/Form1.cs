@@ -16,12 +16,42 @@ namespace BulkRenameGUI {
             InitializeComponent();
         }
 
+        private static string OneOffFix(bool forReal)
+        {
+            var builder = new StringBuilder();
+            string mainDirectory = @"E:\Pictures";
+            var dirs = Directory.EnumerateDirectories(mainDirectory).Where(d => d.Contains("alaska")).ToArray();
+            foreach (var directory in dirs)
+            {
+                string prefix = Path.GetFileName(directory);
+                var files = Directory.EnumerateFiles(directory);
+                foreach (var oldFullName in files)
+                {
+                    string newShortName = Path.GetFileName(oldFullName);
+                    newShortName = newShortName.Replace("DSC", prefix + " ");
+                    newShortName = newShortName.Replace("100_", prefix + " ");
+                    newShortName = newShortName.Replace("101_", prefix + " ");
+                    newShortName = newShortName.Replace("IMG_", prefix + " ");
+                    var newFullName = Path.Combine(directory, newShortName);
+                    if (oldFullName != newFullName)
+                    {
+                        builder.Append(oldFullName + " -> " + newFullName + "\r\n");
+                        if (forReal)
+                        {
+                            File.Move(oldFullName, newFullName);
+                        }
+                    }
+                }
+            }
+
+            return builder.ToString();
+        }
+
         private static string BulkRename(string directory, string searchPattern, string replacePattern, bool forReal) {
             var builder = new StringBuilder();
             foreach (var oldFullName in Directory.GetFiles(directory)) {
                 string oldShortName = Path.GetFileName(oldFullName);
                 if (oldShortName.StartsWith("20") && oldShortName != "ehThumbs.db" && oldShortName != "Thumbs.db") {
-                //if (oldShortName != "ehThumbs.db" && oldShortName != "Thumbs.db") {
                     var newShortName = oldShortName.Replace(searchPattern, replacePattern);
                     var newFullName = Path.Combine(directory, newShortName);
                     builder.Append(oldFullName + " -> " + newFullName + "\r\n");
@@ -53,6 +83,7 @@ namespace BulkRenameGUI {
 
         private void previewButton_Click(object sender, EventArgs e) {
             string results = BulkRename(folderBrowserDialog1.SelectedPath, searchBox.Text, replaceBox.Text, forReal: false);
+            //string results = OneOffFix(forReal: true);
             resultsBox.Text = results;
         }
 
